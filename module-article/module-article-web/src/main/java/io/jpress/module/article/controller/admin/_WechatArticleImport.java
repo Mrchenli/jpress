@@ -62,8 +62,6 @@ public class _WechatArticleImport extends AdminControllerBase {
 
     private static String get_publish_url = "https://api.weixin.qq.com/cgi-bin/freepublish/batchget?access_token=";
 
-    private Map<String, String> articles = new ConcurrentHashMap<>();
-
     public void index() {
         render("article/wechat.html");
     }
@@ -75,11 +73,12 @@ public class _WechatArticleImport extends AdminControllerBase {
             renderJson(Ret.fail().set("message", "无法获取公众号文章信息，请查看公众号配置是否正确。"));
             return;
         }
-        new Thread(()-> doSyncPublish()).start();
-        renderJson(Ret.ok().set("message", "后台正在为您同步文章及其附件，请稍后查看。"));
+//        new Thread(()-> doSyncPublish()).start();
+        int count = doSyncPublish();
+        renderJson(Ret.ok().set("message", "已经为您同步" + count + "文章及其附件，请查看。"));
     }
 
-    public void doSyncPublish() {
+    public int doSyncPublish() {
         String url = get_publish_url + AccessTokenApi.getAccessTokenStr();
         Map<String, Object> dataMap = new HashMap();
         dataMap.put("offset", 0);
@@ -114,6 +113,7 @@ public class _WechatArticleImport extends AdminControllerBase {
         }
         doSaveArticles(articles);
         doDownloadImages(images);
+        return articles.size();
     }
 
 
