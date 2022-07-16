@@ -95,9 +95,15 @@ public class QiniuOssUtils {
     }
 
 
-    public static String getPrivateFile(String objectName) throws UnsupportedEncodingException {
-        String encodeFileName = URLEncoder.encode(objectName, "utf-8").replace("+", "%20");
-        String publicUrl = String.format("%s/%s", JPressOptions.get(KEY_ENDPOINT), encodeFileName);
+    public static String getPrivateFile(String objectName){
+        String encodeFileName = null;
+        try {
+            objectName = removeFileSeparator(objectName);
+            encodeFileName = URLEncoder.encode(objectName, "utf-8").replace("+", "%20");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        String publicUrl = String.format("https://%s/%s", JPressOptions.get(KEY_ENDPOINT), encodeFileName);
         Auth auth = Auth.create(JPressOptions.get(KEY_ACCESSKEYID), JPressOptions.get(KEY_ACCESSKEYSECRET));
         long expireInSeconds = 3600;
         String finalUrl = auth.privateDownloadUrl(publicUrl, expireInSeconds);
@@ -165,7 +171,7 @@ public class QiniuOssUtils {
 
 
     public static void main(String[] args) throws IOException {
-        String endPoint = "https://oss.touchfishfamily.com";
+        String endPoint = "oss.touchfishfamily.com";
         String key = "VWu9oN5ZQy67lLMO0U-R7ps8rXGNLAZDC9vD9_fg";
         String secret = "ycXfKwB1IjQ6s2N7lM6Xz-2VeHIvDEnwPX1mPFZC";
         String bucket = "cms-tf";
@@ -193,10 +199,10 @@ public class QiniuOssUtils {
 //        String path = "D:\\softwares\\ideapj\\jpress\\jpress-commons\\src\\main\\java\\io\\jpress\\commons\\utils\\wxgzh2.jpg";
 //        File file = new File(path);
 
-//        String objName = "test/wxgzh.jpg";
+        String objName = "templates/calmlog/font-awesome/css/font-awesome.min.css";
        // uploadsync(objName, file);
 
-        //String getPath = getPrivateFile(objName);
+        String getPath = getPrivateFile(objName);
         //System.out.println(getPath);
         //delete(objName);
 //        download("wxgzh.jpg", file);
@@ -205,7 +211,7 @@ public class QiniuOssUtils {
 
     public static class InitialUpLoad{
         public static void main(String[] args) throws InterruptedException {
-            String endPoint = "https://oss.touchfishfamily.com";
+            String endPoint = "oss.touchfishfamily.com";
             String key = "VWu9oN5ZQy67lLMO0U-R7ps8rXGNLAZDC9vD9_fg";
             String secret = "ycXfKwB1IjQ6s2N7lM6Xz-2VeHIvDEnwPX1mPFZC";
             String bucket = "cms-tf";
@@ -216,7 +222,7 @@ public class QiniuOssUtils {
             JPressOptions.set(KEY_ENABLE, "true");
             JPressOptions.set(KEY_OSS_DEL, "true");
 
-            String root = "D:\\softwares\\ideapj\\jpress\\starter\\target\\starter-4.0\\starter-4.0\\webapp\\";
+            String root = "D:\\softwares\\ideapj\\jpress\\starter\\target\\starter-4.0\\starter-4.0\\webapp\\attachment";
             iterUpload(new File(root), root);
         }
 
@@ -225,7 +231,7 @@ public class QiniuOssUtils {
                 String filePath = file.getPath();
                 filePath = filePath.replace(rootPath, "");
                 filePath = filePath.replace("\\","/");
-                uploadsync(filePath, file);
+                uploadsync("attachment"+filePath, file);
                 TimeUnit.MILLISECONDS.sleep(200);
             }else{
                 File[] dirFiles = file.listFiles();
