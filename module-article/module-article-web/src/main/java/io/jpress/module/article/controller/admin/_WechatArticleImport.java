@@ -20,8 +20,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.jfinal.aop.Aop;
 import com.jfinal.kit.LogKit;
 import com.jfinal.kit.Ret;
+import com.jfinal.weixin.sdk.api.AccessTokenApi;
 import com.jfinal.weixin.sdk.api.ApiResult;
 import com.jfinal.weixin.sdk.api.MediaApi;
+import com.jfinal.weixin.sdk.utils.HttpUtils;
+import com.jfinal.weixin.sdk.utils.JsonUtils;
 import io.jboot.components.http.JbootHttpRequest;
 import io.jboot.components.http.JbootHttpResponse;
 import io.jboot.utils.FileUtil;
@@ -30,6 +33,7 @@ import io.jboot.utils.NamedThreadPools;
 import io.jboot.utils.StrUtil;
 import io.jboot.web.controller.annotation.RequestMapping;
 import io.jpress.JPressConsts;
+import io.jpress.commons.utils.AliyunOssUtils;
 import io.jpress.commons.utils.AttachmentUtils;
 import io.jpress.model.Attachment;
 import io.jpress.module.article.model.Article;
@@ -41,12 +45,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Michael Yang 杨福海 （fuhai999@gmail.com）
@@ -56,23 +60,60 @@ import java.util.concurrent.ExecutorService;
 @RequestMapping(value = "/admin/setting/tools/wechat", viewPath = JPressConsts.DEFAULT_ADMIN_VIEW)
 public class _WechatArticleImport extends AdminControllerBase {
 
+    private static String get_publish_url = "https://api.weixin.qq.com/cgi-bin/freepublish/batchget?access_token=";
+
+    private Map<String, String> articles = new ConcurrentHashMap<>();
+
     public void index() {
         render("article/wechat.html");
     }
 
 
     public void doImport() {
-
         ApiResult apiResult = MediaApi.getMaterialCount();
         if (!apiResult.isSucceed()) {
             renderJson(Ret.fail().set("message", "无法获取公众号文章信息，请查看公众号配置是否正确。"));
             return;
         }
+        new Thread(()-> doSyncPublish()).start();
+        renderJson(Ret.ok().set("message", "后台正在为您同步文章及其附件，请稍后查看。"));
+    }
 
-        int articleCount = apiResult.getInt("news_count");
-        doSyncArticles(articleCount);
-
-        renderJson(Ret.ok().set("message", "后台正在为您同步 " + articleCount + " 篇文章及其附件，请稍后查看。"));
+    public void doSyncPublish() {
+        String url = get_publish_url + AccessTokenApi.getAccessTokenStr();
+        Map<String, Object> dataMap = new HashMap();
+        dataMap.put("offset", 0);
+        dataMap.put("count", 1000);
+        String jsonResult = HttpUtils.post(url, JsonUtils.toJson(dataMap));
+        ApiResult result =  new ApiResult(jsonResult);
+        List<Article> articles = new ArrayList<>();
+        List<String> images = new ArrayList<>();
+        if (result.isSucceed()) {
+            JSONArray jsonArray = result.get("item");
+            for (int j = jsonArray.size()-1; j >=0; j--) {
+                JSONArray array = jsonArray.getJSONObject(j).getJSONObject("content").getJSONArray("news_item");
+                for (int a = array.size()-1; a >= 0; a--) {
+                    JSONObject articleObject = array.getJSONObject(a);
+                    String title = articleObject.getString("title");
+                    String content = articleObject.getString("content");
+                    String summary = articleObject.getString("digest");
+                    if (StrUtil.isNotBlank(content)) {
+                        content = processContentImages(content, images);
+                    }
+                    Article article = new Article();
+                    article.setTitle(title);
+                    article.setContent(content);
+                    article.setSummary(summary);
+                    article.setCreated(new Date());
+                    article.setModified(new Date());
+                    article.setThumbnail("https://oss.touchfishfamily.com/attachment/20220717/093771d4ed514dcd84b99721ccf3a987.jpg");
+                    article.setStatus(Article.STATUS_NORMAL);
+                    articles.add(article);
+                }
+            }
+        }
+        doSaveArticles(articles);
+        doDownloadImages(images);
     }
 
 
@@ -118,7 +159,7 @@ public class _WechatArticleImport extends AdminControllerBase {
         }).start();
     }
 
-    private String processContentImages(String content, List<String> imageUrls) {
+    public String processContentImages(String content, List<String> imageUrls) {
 
         Document doc = Jsoup.parse(content);
         Elements imgElements = doc.select("img");
@@ -225,6 +266,8 @@ public class _WechatArticleImport extends AdminControllerBase {
             attachment.setSuffix(FileUtil.getSuffix(path));
             attachment.setTitle(downloadToFile.getName());
             attachment.save();
+            //上传到cdn
+            AliyunOssUtils.upload(path, downloadToFile);
         }
 
     }
