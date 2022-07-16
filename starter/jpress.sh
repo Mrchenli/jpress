@@ -29,7 +29,7 @@ CP=${APP_BASE_PATH}/config:${APP_BASE_PATH}/lib/*
 function start()
 {
     # 运行为后台进程，并在控制台输出信息
-    java -Djava.awt.headless=true -Xverify:none ${JAVA_OPTS} -cp ${CP} ${MAIN_CLASS} &
+    java -Djava.awt.headless=true -Xverify:none ${JAVA_OPTS} -cp ${CP} ${MAIN_CLASS}
 
 
     # 运行为后台进程，并且不在控制台输出信息
