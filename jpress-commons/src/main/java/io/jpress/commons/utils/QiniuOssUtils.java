@@ -20,7 +20,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -76,7 +75,7 @@ public class QiniuOssUtils {
             String upToken = auth.uploadToken(JPressOptions.get(KEY_BUCKETNAME));
             Response response = uploadManager.put(new FileInputStream(file), path, upToken, null, null);
             DefaultPutRet putRet = JSONObject.parseObject(response.bodyString(), DefaultPutRet.class);
-            LogKit.error("qiniuyun oss upload success! path:" + path + "\nfile:" + file +"\nret:"+ JSONObject.toJSONString(putRet));
+            LogKit.info("qiniuyun oss upload success! path:" + path + "\nfile:" + file +"\nret:"+ JSONObject.toJSONString(putRet));
             return true;
         } catch (Throwable e) {
             log.error("aliyun oss upload error!!!", e);
