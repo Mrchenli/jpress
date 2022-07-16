@@ -15,11 +15,19 @@
  */
 package io.jpress.commons.utils;
 
+import io.jpress.JPressOptions;
+
 import java.io.File;
 
 
 public class AliyunOssUtils {
 
+    private static final String KEY_ENDPOINT = "attachment_aliyunoss_endpoint";
+
+
+    public static boolean aliYun(){
+        return JPressOptions.get(KEY_ENDPOINT).endsWith(".aliyuncs.com");
+    }
 
     /**
      * 同步本地文件到阿里云OSS
@@ -29,7 +37,11 @@ public class AliyunOssUtils {
      * @return
      */
     public static void upload(String path, File file) {
-        QiniuOssUtils.upload(path,file);
+        if(aliYun()){
+            AliyunOssRealUtils.upload(path, file);
+        }else {
+            QiniuOssUtils.upload(path, file);
+        }
     }
 
     /**
@@ -40,7 +52,11 @@ public class AliyunOssUtils {
      * @return
      */
     public static boolean uploadsync(String path, File file) {
-        return QiniuOssUtils.uploadsync(path, file);
+        if(aliYun()){
+            return AliyunOssRealUtils.uploadsync(path, file);
+        }else {
+            return QiniuOssUtils.uploadsync(path, file);
+        }
     }
 
 
@@ -52,7 +68,12 @@ public class AliyunOssUtils {
      * @return
      */
     public static boolean download(String path, File toFile) {
-        return QiniuOssUtils.download(path, toFile);
+        if(aliYun()){
+            return AliyunOssRealUtils.download(path, toFile);
+        }else{
+            return QiniuOssUtils.download(path, toFile);
+        }
+
     }
 
     /**
@@ -60,7 +81,11 @@ public class AliyunOssUtils {
      * @param objectName
      */
     public static void delete(String objectName){
-        QiniuOssUtils.delete(objectName);
+        if(aliYun()){
+            AliyunOssRealUtils.delete(objectName);
+        }else {
+            QiniuOssUtils.delete(objectName);
+        }
     }
 
 }
