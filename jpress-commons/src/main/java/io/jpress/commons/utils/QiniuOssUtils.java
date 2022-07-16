@@ -20,7 +20,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 public class QiniuOssUtils {
@@ -188,16 +190,51 @@ public class QiniuOssUtils {
         JPressOptions.set(KEY_ENABLE, "true");
         JPressOptions.set(KEY_OSS_DEL, "true");
 
-        String path = "D:\\softwares\\ideapj\\jpress\\jpress-commons\\src\\main\\java\\io\\jpress\\commons\\utils\\wxgzh2.jpg";
-        File file = new File(path);
+//        String path = "D:\\softwares\\ideapj\\jpress\\jpress-commons\\src\\main\\java\\io\\jpress\\commons\\utils\\wxgzh2.jpg";
+//        File file = new File(path);
 
-        String objName = "test/wxgzh.jpg";
+//        String objName = "test/wxgzh.jpg";
        // uploadsync(objName, file);
 
         //String getPath = getPrivateFile(objName);
         //System.out.println(getPath);
         //delete(objName);
-        download("wxgzh.jpg", file);
+//        download("wxgzh.jpg", file);
     }
+
+
+    public static class InitialUpLoad{
+        public static void main(String[] args) throws InterruptedException {
+            String endPoint = "https://oss.touchfishfamily.com";
+            String key = "VWu9oN5ZQy67lLMO0U-R7ps8rXGNLAZDC9vD9_fg";
+            String secret = "ycXfKwB1IjQ6s2N7lM6Xz-2VeHIvDEnwPX1mPFZC";
+            String bucket = "cms-tf";
+            JPressOptions.set(KEY_ACCESSKEYID, key);
+            JPressOptions.set(KEY_ACCESSKEYSECRET, secret);
+            JPressOptions.set(KEY_BUCKETNAME, bucket);
+            JPressOptions.set(KEY_ENDPOINT, endPoint);
+            JPressOptions.set(KEY_ENABLE, "true");
+            JPressOptions.set(KEY_OSS_DEL, "true");
+
+            String root = "D:\\softwares\\ideapj\\jpress\\starter\\target\\starter-4.0\\starter-4.0\\webapp\\";
+            iterUpload(new File(root), root);
+        }
+
+        private static void iterUpload(File file, String rootPath) throws InterruptedException {
+            if(file.isFile()){
+                String filePath = file.getPath();
+                filePath = filePath.replace(rootPath, "");
+                filePath = filePath.replace("\\","/");
+                uploadsync(filePath, file);
+                TimeUnit.MILLISECONDS.sleep(200);
+            }else{
+                File[] dirFiles = file.listFiles();
+                for (File n: dirFiles){
+                    iterUpload(n, rootPath);
+                }
+            }
+        }
+    }
+
 
 }
