@@ -20,9 +20,11 @@ import com.jfinal.upload.UploadFile;
 import io.jboot.utils.FileUtil;
 import io.jboot.utils.StrUtil;
 import io.jpress.JPressConfig;
+import net.coobird.thumbnailator.Thumbnails;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -54,12 +56,17 @@ public class AttachmentUtils {
         }
 
         try {
-            org.apache.commons.io.FileUtils.moveFile(file, newfile);
-            newfile.setReadable(true,false);
+            //如果是jpg就进行一次压缩
+            String suffix = FileUtil.getSuffix(uploadFile.getFileName());
+            if ((suffix.equals(".jpg") || suffix.equals(".jpeg")) && Files.size(file.toPath()) > 300 * 1024) {
+                Thumbnails.of(file).scale(1f).outputQuality(0.5f).toFile(newfile);
+            } else {
+                org.apache.commons.io.FileUtils.moveFile(file, newfile);
+            }
+            newfile.setReadable(true, false);
         } catch (IOException e) {
             LOG.error(e.toString(), e);
         }
-
         String attachmentRoot = JPressConfig.me.getAttachmentRootOrWebRoot();
         return FileUtil.removePrefix(newfile.getAbsolutePath(), attachmentRoot);
     }

@@ -21,13 +21,13 @@ import com.jfinal.upload.UploadFile;
 import io.jboot.utils.FileUtil;
 import io.jboot.web.controller.annotation.RequestMapping;
 import io.jpress.JPressOptions;
-import io.jpress.commons.utils.AliyunOssUtils;
 import io.jpress.commons.utils.AttachmentUtils;
 import io.jpress.model.Attachment;
 import io.jpress.service.AttachmentService;
 import io.jpress.web.base.UserControllerBase;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * @author Michael Yang 杨福海 （fuhai999@gmail.com）
@@ -42,7 +42,7 @@ public class AttachmentController extends UserControllerBase {
     @Inject
     private AttachmentService service;
 
-    public void upload() {
+    public void upload() throws IOException {
         if (!isMultipartRequest()) {
             renderError(404);
             return;
@@ -84,7 +84,8 @@ public class AttachmentController extends UserControllerBase {
         }
 
         String path = AttachmentUtils.moveFile(uploadFile);
-        AliyunOssUtils.upload(path, AttachmentUtils.file(path));
+        //todo 暂时不要用cdn
+        // AliyunOssUtils.upload(path, AttachmentUtils.file(path));
 
         Attachment attachment = new Attachment();
         attachment.setUserId(getLoginedUser().getId());
@@ -97,8 +98,8 @@ public class AttachmentController extends UserControllerBase {
 
         renderJson(Ret.ok().set("success", true)
                 .set("src", attachment.getPath())
-                .set("title",attachment.getTitle())
-                .set("attachmentId",attachmentId)
+                .set("title", attachment.getTitle())
+                .set("attachmentId", attachmentId)
         );
     }
 

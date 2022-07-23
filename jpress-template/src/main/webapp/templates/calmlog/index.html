@@ -66,7 +66,12 @@
                         #(article.title)
                     </h3>
                     <p class="cl-card-main-info">#maxLength(article.text,100)</p>
-                    <p class="cl-card-more">阅读更多...</p>
+                    <div style="display: flex; justify-content: left">
+                        <div><i class="fa fa-clock-o"></i>#date(article.created)</div>
+                        <div style="margin-left: 20px"><i class="fa fa-eye"></i>#(article.view_count)</div>
+                        <div style="margin-left: 20px"><i class="fa fa-commenting-o"></i>#(article.comment_count)</div>
+                    </div>
+<!--                    <p class="cl-card-more">阅读更多...</p>-->
                 </div>
 
         </div>
